@@ -1,7 +1,7 @@
 import random
 
 
-class JuegoPianoModelo:
+class JuegoPianoModel:
     def __init__(self, teclas, notas):
         self.teclas = teclas
         self.notas = notas
