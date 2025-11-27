@@ -8,11 +8,9 @@
 ### JuegoPianoModel (`mvvm/Model/juegoPiano.py`)
 **Propósito:** Representa el estado y la lógica principal del juego.
 
-- `__init__(teclas, notas)`: Inicializa el modelo con las teclas y notas, genera la melodía aleatoria y prepara el estado inicial.
-- `reiniciar()`: Reinicia el estado del juego y genera una nueva melodía.
-- `agregar_nota_usuario(nota)`: Añade una nota a la secuencia del usuario y mantiene solo las últimas N notas.
-- `usuario_acerto()`: Devuelve `True` si la secuencia del usuario coincide con la melodía generada.
 
+- `__init__(teclas, notas, cantidad_notas_melodia=6)`: Inicializa el modelo con soporte para generar melodías de diferentes tamaños según la dificultad.
+- `reiniciar(cantidad_notas_melodia=None)`: Reinicia el estado y genera una nueva melodía con tamaño configurable.
 ---
 
 ## ViewModel
@@ -41,10 +39,9 @@
 ### ViewJuego (`mvvm/View/ViewJuego.py`)
 **Propósito:** Vista principal del juego, muestra los botones de las teclas y el temporizador.
 
-- `__init__(master, teclas, notas, on_tecla, on_reproducir_melodia)`: Inicializa la vista, crea los botones y el temporizador.
-- `actualizar_tiempo(tiempo)`: Actualiza la etiqueta del temporizador.
-- `sombrear_tecla(tecla, duracion_ms=200)`: Sombrea el botón de la tecla por un tiempo y luego lo restaura.
 
+- `__init__(master, teclas, notas, on_tecla, on_reproducir_melodia, on_mostrar_menu, on_reiniciar)`: Inicializa con layout mejorado en tres frames (superior, central, inferior).
+- `_restaurar_boton(btn)`: Restaura botón a estado normal con manejo de excepciones TclError.
 ### ViewResultado (`mvvm/View/ViewResultado.py`)
 **Propósito:** Vista de resultado, muestra el mensaje final y los botones para reintentar o cerrar.
 
@@ -54,7 +51,7 @@
 
 ## Clase principal
 
-### Interfaz (`acertijo.py`)
+### Interfaz (`MelodiaPiano.py`)
 **Propósito:** Ventana principal del juego, gestiona el cambio entre la vista de juego y la de resultado.
 
 - `__init__()`: Inicializa la ventana principal, define las teclas y notas, y muestra la vista de juego.
@@ -72,30 +69,49 @@
 
 # Implementación de hilos en el programa
 
-El uso de hilos (threading) en este proyecto es fundamental para mantener la interfaz gráfica responsiva y evitar bloqueos al realizar tareas que requieren tiempo, como el temporizador y la reproducción de melodías.
+
+
+
+
+
+## ¿Se usan hilos en este programa?
+
+**Sí**, se usan hilos de manera controlada en dos contextos principales: temporizador y reproducción de melodía.
 
 ## ¿Dónde y cómo se usan los hilos?
 
-- **Temporizador:**
-	- El método `iniciar_temporizador()` en el ViewModel (`JuegoPianoVM`) crea un hilo (`Thread`) que ejecuta el método privado `_hilo_temporizador`. Este hilo descuenta el tiempo restante cada segundo y actualiza la vista usando `after` para no bloquear la interfaz principal.
-	- Si el usuario cierra la ventana o reinicia el juego, se utiliza una bandera (`_cerrar`) para que el hilo termine silenciosamente y no intente acceder a widgets destruidos.
+### 1. **Temporizador**
+- El método `iniciar_temporizador()` crea un hilo daemon que ejecuta `_hilo_temporizador()`.
+- Este hilo descuenta el tiempo cada segundo usando `time.sleep(1)` y actualiza la vista con `after()`.
+- Verifica la bandera `_cerrar` para terminar silenciosamente si es necesario.
+- Captura excepciones `RuntimeError` si la ventana se cierra.
 
-- **Sombreado de teclas:**
-	- Cuando el usuario presiona una tecla, se crea un hilo que ejecuta la función de sombrear el botón correspondiente por un tiempo breve (200 ms). Esto permite que varias teclas se puedan sombrear/desombrear simultáneamente sin bloquear la interfaz.
+### 2. **Reproducción de melodía**
+- El método `reproducir_melodia()` crea un hilo daemon que ejecuta `_hilo_melodia()`.
+- Reproduce las notas con pausas de 0.5 segundos usando `time.sleep(0.5)`.
+- Permite interacción durante la reproducción sin congelar la interfaz.
 
-- **Reproducción de melodía:**
-	- Al pulsar la barra espaciadora o el botón de reproducir melodía, se crea un hilo que reproduce la secuencia de notas generada por el modelo, con pausas entre cada nota. Así, el usuario puede seguir interactuando con la interfaz mientras se reproduce la melodía.
-
+### 3. **Sombreado de teclas**
+- **Ya NO usa hilos** en la versión actual (se removió para evitar errores TclError).
+- Ahora usa `after()` de Tkinter directamente en la vista.
+- Incluye manejo de excepciones `TclError` para widgets destruidos.
 ## Ventajas de esta implementación
 
-- La interfaz gráfica nunca se bloquea, incluso si el temporizador está corriendo o se están reproduciendo sonidos.
-- Permite manejar múltiples acciones simultáneas (por ejemplo, pulsar varias teclas rápidamente).
-- Los hilos se gestionan cuidadosamente para evitar errores al cerrar o reiniciar la ventana, usando banderas y excepciones controladas.
 
 ## Resumen de métodos que usan hilos
 
-- `JuegoPianoVM.iniciar_temporizador()` → hilo para el temporizador.
-- `JuegoPianoVM.procesar_tecla()` → hilo para sombrear teclas.
-- `JuegoPianoVM.reproducir_melodia()` → hilo para reproducir la melodía.
 
-Esta arquitectura permite una experiencia de usuario fluida y robusta en aplicaciones gráficas con Python y Tkinter.
+ Esta arquitectura permite una experiencia de usuario fluida y robusta con control preciso de concurrencia.
+ 
+ - La interfaz **nunca se bloquea** porque operaciones largas se ejecutan en hilos separados.
+ - El **temporizador funciona independientemente** sin detener la interacción del usuario.
+ - La **reproducción no congela** la interfaz, permitiendo interacción durante su ejecución.
+ - Los hilos son **daemon threads** que cierran automáticamente con la aplicación.
+ - Las excepciones se capturan para evitar crashes por widgets destruidos.
+ 
+ ## Resumen de métodos que usan hilos
+ 
+ - `JuegoPianoVM.iniciar_temporizador()` → crea hilo daemon para `_hilo_temporizador()`.
+ - `JuegoPianoVM._hilo_temporizador()` → hilo que decrementa tiempo y actualiza vista.
+ - `JuegoPianoVM.reproducir_melodia()` → crea hilo daemon para `_hilo_melodia()`.
+ - `JuegoPianoVM._hilo_melodia()` → hilo que reproduce notas con pausas.

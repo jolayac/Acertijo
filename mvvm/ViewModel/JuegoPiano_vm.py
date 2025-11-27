@@ -5,8 +5,10 @@ from mvvm.ViewModel.ReproductorSonidos_vm import ReproductorSonidos
 
 
 class JuegoPianoVM:
-    def __init__(self, teclas, notas, ruta_notas, vista_juego, vista_resultado_callback):
-        self.modelo = JuegoPianoModel(teclas, notas)
+    '''Controlador que enlaza Modelo y Vistas, maneja temporizador y reproducción.'''
+    def __init__(self, teclas, notas, ruta_notas, vista_juego, vista_resultado_callback, cantidad_notas_melodia=6):
+        '''Inicializa modelo, reproductor y arranca temporizador.'''
+        self.modelo = JuegoPianoModel(teclas, notas, cantidad_notas_melodia)
         self.reproductor = ReproductorSonidos(ruta_notas, notas)
         self.vista_juego = vista_juego
         self.vista_resultado_callback = vista_resultado_callback
@@ -14,15 +16,12 @@ class JuegoPianoVM:
         self.iniciar_temporizador()
 
     def procesar_tecla(self, tecla):
+        '''Procesa una tecla pulsada, sombrear, reproducir sonido y verificar acierto.'''
         if not self.modelo.en_ejecucion or tecla not in self.modelo.teclas:
             return
-        # Solo sombrear si el frame sigue activo
-
-        def sombrear():
-            if hasattr(self.vista_juego, "_cerrar") and self.vista_juego._cerrar:
-                return
-            self.vista_juego.sombrear_tecla(tecla)
-        threading.Thread(target=sombrear, daemon=True).start()
+        # Sombrear la tecla sin usar hilos
+        self.vista_juego.sombrear_tecla(tecla)
+        
         nota = self.modelo.tecla_a_nota[tecla]
         self.reproductor.reproducir(nota)
         self.modelo.agregar_nota_usuario(nota)
@@ -32,8 +31,9 @@ class JuegoPianoVM:
                 "¡Felicitaciones, acertaste la melodía!")
 
     def reproducir_melodia(self):
+        '''Lanza un hilo para reproducir la melodía nota por nota.'''
         if self.modelo.en_ejecucion:
-            threading.Thread(target=self._hilo_melodia).start()
+            threading.Thread(target=self._hilo_melodia, daemon=True).start()
 
     def _hilo_melodia(self):
         for nota in self.modelo.melodia:
@@ -68,7 +68,10 @@ class JuegoPianoVM:
             except RuntimeError:
                 return
 
-    def reiniciar(self):
-        self.modelo.reiniciar()
-        self.vista_juego.actualizar_tiempo(self.modelo.tiempo_restante)
+    def reiniciar(self, cantidad_notas_melodia=None):
+        self.modelo.reiniciar(cantidad_notas_melodia)
+        try:
+            self.vista_juego.actualizar_tiempo(self.modelo.tiempo_restante)
+        except Exception:
+            pass
         self.iniciar_temporizador()

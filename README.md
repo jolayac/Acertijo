@@ -1,9 +1,8 @@
 # Acertijo
-
-Juego educativo tipo "acertijo de melodía" — reproduce una melodía con las teclas indicadas antes de que se acabe el tiempo.
+Reproduce una melodía con las teclas indicadas antes de que se acabe el tiempo.
 
 ## Qué hace
-El juego genera una melodía aleatoria (6 notas) a partir de una lista de notas configurables. El jugador debe reproducir esa secuencia usando las teclas del teclado o haciendo clic en los botones en pantalla. Si reproducen la secuencia completa antes de que termine el temporizador, ganan.
+El juego genera una melodía aleatoria (3, 5 o 7 notas) a partir de una lista de notas configurables (en el __init__ de Intefaz en `MelodiaPiano.py`). El jugador debe reproducir esa secuencia usando las teclas del teclado o haciendo clic en los botones en pantalla. Si reproducen la secuencia completa antes de que termine el temporizador, ganan.
 
 Características principales:
 - Interfaz gráfica con botones que representan teclas de piano.
@@ -19,9 +18,9 @@ Características principales:
 - R: intentar de nuevo (reinicia el juego cuando aparece la pantalla de resultado o haciendo clic en el botón correspondiente).
 - Esc: cerrar la aplicación.
 
-## Configuración rápida
+## Configuración rápida (si quieres modificarl las notas existentes)
 
-1. Edita `acertijo.py` si quieres cambiar las teclas o las notas. Hay dos listas al principio de `Interfaz`:
+1. Edita `MelodiaPiano.py` si quieres cambiar las teclas o las notas. Hay dos listas al principio de `Interfaz`:
 
 ```python
 # en mvvm/main.py (Interfaz.__init__)
@@ -33,8 +32,9 @@ La librería busca archivos llamados exactamente `C4.mp3`, `D4.mp3`, etc. para c
 
 ## Cómo ejecutar
 
-Desde PowerShell (Windows), sitúate en la carpeta del proyecto y ejecuta el archivo acertijo.py
+Desde PowerShell (Windows), sitúate en la carpeta del proyecto y ejecuta el archivo MelodiaPiano.py
 
 ## Requisitos
 Pygame
-´´Instalar con pip install pygame´´
+Instalar con:
+´´pip install pygame´´

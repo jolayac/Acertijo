@@ -3,3 +3,4 @@ mvvm/__pycache__/
 mvvm/Model/__pycache__/
 mvvm/View/__pycache__/
 mvvm/ViewModel/__pycache__/
+.venv/
